@@ -1,0 +1,21 @@
+body {
+  margin: 0px;
+}
+
+.floating {
+  position: absolute;
+}
+
+#status {
+  top: 30px;
+  left: 30px;
+}
+#source {
+  top: 100px;
+  left: 30px;
+}
+#errors {
+  top: 300px;
+  left: 30px;
+  color: red;
+}
