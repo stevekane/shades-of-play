@@ -1,4 +1,5 @@
 var browserify = require("browserify")
+var glslify    = require("glslify")
 var path       = require('path')
 var fs         = require('fs')
 var fileName   = process.argv[2]
@@ -9,6 +10,7 @@ if (!fileName) process.exit(1)
 
 browserify({debug: true})
   .require(require.resolve(targetPath), { entry: true })
+  .transform(glslify)
   .bundle()
   .on('error', function (err) { console.error(err); })
   .pipe(fs.createWriteStream(bundlePath))
