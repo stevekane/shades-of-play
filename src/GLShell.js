@@ -4,9 +4,10 @@ var resizeWithRatio = require("./dom-utils").resizeWithRatio
 module.exports = GLShell
 
 function GLShell (parentNode, aspectRatio) {
-  var canvas = document.createElement("canvas")
-  var gl     = canvas.getContext("webgl")
-  var clock  = new Clock
+  var canvas           = document.createElement("canvas")
+  var gl               = canvas.getContext("webgl")
+  var clock            = new Clock
+  var textureUnitIndex = 0
 
   var render = function () {
     var ratio = this.gl.canvas.clientWidth / this.gl.canvas.clientHeight
@@ -26,6 +27,10 @@ function GLShell (parentNode, aspectRatio) {
   this.gl          = gl
   this.aspectRatio = aspectRatio
   this.clock       = clock
+
+  Object.defineProperty(this, "nextTextureUnit", {
+    get: function () { return textureUnitIndex++ } 
+  })
 
   requestAnimationFrame(render)
   setInterval(update, 25)

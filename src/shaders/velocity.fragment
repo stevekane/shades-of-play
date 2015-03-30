@@ -1,0 +1,10 @@
+uniform float dT;
+uniform vec2 viewport;
+uniform sampler2D velocities;
+
+void main () {
+  vec2 textureIndex = gl_FragCoord.xy / viewport;
+  vec3 velocity     = texture2D(velocities, textureIndex);
+
+  gl_FragColor = velocity;
+}
