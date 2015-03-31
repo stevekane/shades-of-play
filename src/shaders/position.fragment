@@ -1,3 +1,5 @@
+precision mediump float;
+
 uniform float dT;
 uniform vec2 viewport;
 uniform sampler2D velocities;
@@ -5,8 +7,8 @@ uniform sampler2D positions;
 
 void main () {
   vec2 textureIndex = gl_FragCoord.xy / viewport;
-  vec3 velocity     = texture2D(velocities, textureIndex);
-  vec3 position     = texture2D(positions, textureIndex);
+  vec3 velocity     = texture2D(velocities, textureIndex).xyz;
+  vec3 position     = texture2D(positions, textureIndex).xyz;
 
-  gl_FragColor  = dT * velocity + position;
+  gl_FragColor  = vec4((dT * velocity) + position, 1.0);
 }

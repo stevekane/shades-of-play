@@ -1,10 +1,10 @@
-precision highp float;
-
 attribute vec2 particleCoord;
 
 uniform sampler2D positions;
 
 void main () {
   //TODO: we should probably implement some kind of perspective shit here as well
-  gl_Position = texture2D(positions, particleCoord);
+  vec3 pos     = texture2D(positions, particleCoord).xyz;
+  gl_Position  = vec4(pos, 1.0);
+  gl_PointSize = 12.0;
 }

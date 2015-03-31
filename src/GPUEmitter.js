@@ -2,19 +2,8 @@ module.exports = GPUEmitter
 
 var PARTICLE_STRIDE = 4
 
-/* Calculate the size of the teture needed to represent this system
- * Build CPU memory buffers containing initial values for position
- * and velocity
- * Create textures for both position and velocity data and populate them 
- * with the initial values for position and velocity
- * Initialize framebuffers for each texture and bind the texture to the buffer
- * Create array of particle coordinates which are used to lookup a particle
- * in the shaders.
- * Buffer this array of particle coordinates in GPU memory and store a reference
- * to the handle.
- **/
 function GPUEmitter (glShell, MAX_COUNT, x, y, z) {
-  if (!gl.getExtension("OES_texture_float")) throw new Error("no float textures")
+  if (!glShell.gl.getExtension("OES_texture_float")) throw new Error("no float textures")
 
   var gl             = glShell.gl
   var ROW_SIZE       = calculateRowSize(1, MAX_COUNT)
@@ -32,7 +21,6 @@ function GPUEmitter (glShell, MAX_COUNT, x, y, z) {
                                         velocities, gl.createTexture())
   var particleCoords = buildParticleCoords(ROW_SIZE, ROW_SIZE)
   var coordBuffer    = gl.createBuffer()
-
 
   gl.bindBuffer(gl.ARRAY_BUFFER, coordBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, particleCoords, gl.STATIC_DRAW)
@@ -58,8 +46,8 @@ function buildParticleCoords (width, height) {
 
   for (var j = 0; j < height; j++) {
     for (var i = 0; i < width; i++) {
-      array[j * 2 * width + i * 2]     = [i]
-      array[j * 2 * width + i * 2 + 1] = [j]
+      array[j * 2 * width + i * 2]     = [i / width]
+      array[j * 2 * width + i * 2 + 1] = [j / height]
     } 
   }
   return array
@@ -69,11 +57,12 @@ function setParticleXYZ (index, x, y, z, array) {
   array[PARTICLE_STRIDE * index]     = x
   array[PARTICLE_STRIDE * index + 1] = y
   array[PARTICLE_STRIDE * index + 2] = z
+  array[PARTICLE_STRIDE * index + 3] = 1
 }
 
 function initializeParticleXYZ (x, y, z, array) {
   for (var i = 0; i < array.length / PARTICLE_STRIDE; i++) {
-    setParticleXYZ(i, x, y, z, array)
+    setParticleXYZ(i, x + Math.random(), y + Math.random(), z, array)
   }
   return array
 }
@@ -83,8 +72,6 @@ function initializeParticleXYZ (x, y, z, array) {
 function configureTexture (glShell, width, height, data, texture) {
   var gl          = glShell.gl
   var textureUnit = glShell.nextTextureUnit
-
-  console.log(textureUnit)
 
   texture.unit = textureUnit
   gl.activeTexture(gl.TEXTURE0 + textureUnit)
