@@ -1,44 +1,30 @@
+var GLFloatTexture = require("./GLFloatTexture")
+var GLRenderTarget = require("./GLRenderTarget")
+
 module.exports = GPUEmitter
 
 var PARTICLE_STRIDE = 4
 
-function GPUEmitter (glShell, MAX_COUNT, x, y, z) {
-  if (!glShell.gl.getExtension("OES_texture_float")) throw new Error("no float textures")
+function GPUEmitter (gl, x, y, z) {
+  if (!gl.getExtension("OES_texture_float")) throw new Error("no float textures")
 
-  var gl             = glShell.gl
-  var ROW_SIZE       = calculateRowSize(1, MAX_COUNT)
+  var ROW_SIZE       = 256
   var COUNT          = ROW_SIZE * ROW_SIZE
   var positions      = initializeParticleXYZ(x, y, z, new Float32Array(4 * COUNT))
   var velocities     = new Float32Array(4 * COUNT)
-
-  var posTexture1    = configureTexture(glShell, ROW_SIZE, ROW_SIZE, 
-                                        positions, gl.createTexture())
-  var posTexture2    = configureTexture(glShell, ROW_SIZE, ROW_SIZE, 
-                                        positions, gl.createTexture())
-  var velTexture1    = configureTexture(glShell, ROW_SIZE, ROW_SIZE, 
-                                        velocities, gl.createTexture())
-  var velTexture2    = configureTexture(glShell, ROW_SIZE, ROW_SIZE, 
-                                        velocities, gl.createTexture())
+  var posTarget1     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, positions)
+  var posTarget2     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, positions)
+  var velTarget1     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, velocities)
+  var velTarget2     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, velocities)
   var particleCoords = buildParticleCoords(ROW_SIZE, ROW_SIZE)
   var coordBuffer    = gl.createBuffer()
 
   gl.bindBuffer(gl.ARRAY_BUFFER, coordBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, particleCoords, gl.STATIC_DRAW)
 
-  this.livingIndex  = 4
-  this.width        = ROW_SIZE
-  this.height       = ROW_SIZE
-  this.posTextures  = [posTexture1, posTexture2]
-  this.velTextures  = [velTexture1, velTexture2]
-  this.readIndex    = 0
+  this.posTargets   = [posTarget1, posTarget2]
+  this.velTargets   = [velTarget1, velTarget2]
   this.coordBuffer  = coordBuffer
-}
-
-function calculateRowSize (val, target) {
-  while ( val * val < target ) {
-    val++ 
-  }
-  return val
 }
 
 function buildParticleCoords (width, height) {
@@ -62,36 +48,7 @@ function setParticleXYZ (index, x, y, z, array) {
 
 function initializeParticleXYZ (x, y, z, array) {
   for (var i = 0; i < array.length / PARTICLE_STRIDE; i++) {
-    setParticleXYZ(i, x + Math.random(), y + Math.random(), z, array)
+    setParticleXYZ(i, x + Math.random() - .5, y + Math.random() - .5, z, array)
   }
   return array
 }
-
-//TODO: this is gross.  we are attaching an additional parameter to the handle
-//that we don't own because reasons.  probably should create wrapper object
-function configureTexture (glShell, width, height, data, texture) {
-  var gl          = glShell.gl
-  var textureUnit = glShell.nextTextureUnit
-
-  texture.unit = textureUnit
-  gl.activeTexture(gl.TEXTURE0 + textureUnit)
-  gl.bindTexture(gl.TEXTURE_2D, texture)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
-                width, height, 
-                0, gl.RGBA, gl.FLOAT, data)
-  gl.bindTexture(gl.TEXTURE_2D, null)
-  return texture
-}
-
-function configureFrameBuffer (gl, texture, frameBuffer) {
-  gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer)
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, 
-                          gl.TEXTURE_2D, texture, 0) 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-  return frameBuffer
-}
-

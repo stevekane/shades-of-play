@@ -37,20 +37,20 @@ function shouldIgnore (strList, str) {
   return false
 }
 
-fs.watch(targetDir, function (_, name) {
-  if (!name)                                 return console.log("watch error")
-  if (shouldIgnore(IGNORED_CHARS, name))     return console.log("ignored " + name)
-  if (!shouldIgnore(VALID_EXTENSIONS, name)) return console.log("ignored " + name)
-
-  var filePath = path.join(targetDir, name)
-
-  fs.readFile(filePath, {encoding: ENCODING}, function (err, data) {
-    if (err) return console.log(err)
-      else     return socketServer.emit("sourceChange", {
-        fileName: name,
-        source:   data
-      })
-  })
-})
+//fs.watch(targetDir, function (_, name) {
+//  if (!name)                                 return console.log("watch error")
+//  if (shouldIgnore(IGNORED_CHARS, name))     return console.log("ignored " + name)
+//  if (!shouldIgnore(VALID_EXTENSIONS, name)) return console.log("ignored " + name)
+//
+//  var filePath = path.join(targetDir, name)
+//
+//  fs.readFile(filePath, {encoding: ENCODING}, function (err, data) {
+//    if (err) return console.log(err)
+//      else     return socketServer.emit("sourceChange", {
+//        fileName: name,
+//        source:   data
+//      })
+//  })
+//})
 
 httpServer.listen(PORT)

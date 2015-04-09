@@ -15,8 +15,6 @@ function GPUParticleSystem (gl) {
   var velocityProgram = new GLProgram.fromSource(gl, velocityVSrc, velocityFSrc)
   var positionProgram = new GLProgram.fromSource(gl, positionVSrc, positionFSrc)
   var renderProgram   = new GLProgram.fromSource(gl, renderVSrc, renderFSrc)
-  var positionBuffer  = gl.createFramebuffer()
-  var velocityBuffer  = gl.createFramebuffer()
   var screenQuad      = new ScreenQuad
   var screenBuffer    = gl.createBuffer()
 
@@ -24,14 +22,14 @@ function GPUParticleSystem (gl) {
   if (positionProgram instanceof Error) console.log(positionProgram)
   if (renderProgram instanceof Error)   console.log(renderProgram)
 
-  //bind full screen quad coord buffer for both velocity and position prog
+  //buffer full screen quad coord for both velocity and position prog
   gl.bindBuffer(gl.ARRAY_BUFFER, screenBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, screenQuad, gl.STATIC_DRAW)
 
   gl.clearColor(0, 0, 0, 0)
 
   //enable attribute arrays for all programs
-  gl.enableVertexAttribArray(velocityProgram.attributes.screenCoord)
+  //gl.enableVertexAttribArray(velocityProgram.attributes.screenCoord)
   gl.enableVertexAttribArray(positionProgram.attributes.screenCoord)
   gl.enableVertexAttribArray(renderProgram.attributes.particleCoord)
 
@@ -39,71 +37,49 @@ function GPUParticleSystem (gl) {
   this.screenBuffer    = screenBuffer
   this.velocityProgram = velocityProgram
   this.positionProgram = positionProgram
-  this.velocityBuffer  = velocityBuffer
-  this.positionBuffer  = positionBuffer
   this.renderProgram   = renderProgram
 }
 
-/*
- *
- **/
+
 GPUParticleSystem.prototype.update = function (dT, gpuEmitters) {
   var gl = this.gl
   var emitter 
-  var readFromIndex
-  var writeToIndex
-
-  gl.useProgram(this.velocityProgram.program)
-  gl.uniform1f(this.velocityProgram.uniforms.dT, dT)
-  gl.bindFramebuffer(gl.FRAMEBUFFER, this.velocityBuffer)
-  gl.bindBuffer(gl.ARRAY_BUFFER, this.screenBuffer)
-  gl.vertexAttribPointer(this.velocityProgram.attributes.screenCoord, 2,
-                         gl.FLOAT, gl.FALSE, 0, 0)
-
-  //update velocities using drawCall for each emitter
-  for (var i = 0; i < gpuEmitters.length; i++) {
-    emitter       = gpuEmitters[i]
-    readFromIndex = emitter.readIndex
-    writeToIndex  = emitter.readIndex === 0 ? 1 : 0
-
-    gl.uniform1i(this.velocityProgram.uniforms.velocities, 
-                 emitter.velTextures[readFromIndex].unit)
-    gl.uniform2f(this.velocityProgram.uniforms.viewport, 
-                 emitter.width, emitter.height)
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D,
-                            emitter.velTextures[writeToIndex], 0)
-    gl.viewport(0, 0, emitter.width, emitter.height)
-    gl.drawArrays(gl.TRIANGLES, 0, 6)
-  }
+  var tmpBuf
 
   gl.useProgram(this.positionProgram.program)
+  gl.disable(gl.DEPTH_TEST)
+  gl.blendFunc(gl.ONE, gl.ZERO)
   gl.uniform1f(this.positionProgram.uniforms.dT, dT)
-  gl.bindFramebuffer(gl.FRAMEBUFFER, this.positionBuffer)
   gl.bindBuffer(gl.ARRAY_BUFFER, this.screenBuffer)
-  gl.vertexAttribPointer(this.positionProgram.attributes.screenCoord, 2,
-                         gl.FLOAT, gl.FALSE, 0, 0)
+  gl.enableVertexAttribArray(this.positionProgram.attributes.screenCoord)
+  gl.vertexAttribPointer(this.positionProgram.attributes.screenCoord, 
+                         2, gl.FLOAT, gl.FALSE, 0, 0)
 
-  //update positions using drawCall for each emitter
   for (var j = 0; j < gpuEmitters.length; j++) {
-    emitter       = gpuEmitters[j] 
-    readFromIndex = emitter.readIndex
-    writeToIndex  = emitter.readIndex === 0 ? 1 : 0
+    emitter = gpuEmitters[j]
 
-    gl.uniform1i(this.positionProgram.uniforms.positions, 
-                emitter.posTextures[readFromIndex].unit)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, emitter.posTargets[1].handle) 
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, emitter.posTargets[0].texture)
+    gl.uniform1i(this.positionProgram.uniforms.positions, 0)
     gl.uniform2f(this.positionProgram.uniforms.viewport, 
-                emitter.width, emitter.height)
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D,
-                           emitter.posTextures[writeToIndex], 0)
-    gl.viewport(0, 0, emitter.width, emitter.height)
+                 emitter.posTargets[1].width, 
+                 emitter.posTargets[1].height)
+    gl.viewport(0, 0, emitter.posTargets[1].width, 
+                      emitter.posTargets[1].height)
+    //gl.clear(gl.COLOR_BUFFER_BIT)
     gl.drawArrays(gl.TRIANGLES, 0, 6)
+
+    tmpBuf                = emitter.posTargets[0]
+    emitter.posTargets[0] = emitter.posTargets[1]
+    emitter.posTargets[1] = tmpBuf
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
-  //toggle all readFrom indices 
-  for (var k = 0; k < gpuEmitters.length; k++) {
-    emitter           = gpuEmitters[k]
-    emitter.readIndex = emitter.readIndex === 0 ? 1 : 0
-  }
+  gl.disableVertexAttribArray(this.positionProgram.attributes.screenCoord)
+  gl.useProgram(null)
 }
 
 GPUParticleSystem.prototype.render = function (gpuEmitters) {
@@ -118,16 +94,21 @@ GPUParticleSystem.prototype.render = function (gpuEmitters) {
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE)
 
   for (var i = 0; i < gpuEmitters.length; i++) {
-    emitter       = gpuEmitters[i] 
-    readFromIndex = emitter.readIndex
+    emitter = gpuEmitters[i] 
 
-    gl.uniform1i(this.renderProgram.uniforms.positions,
-                 emitter.posTextures[readFromIndex].unit)
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, emitter.posTargets[0].texture)
+    gl.uniform1i(this.renderProgram.uniforms.positions, 0)
     gl.bindBuffer(gl.ARRAY_BUFFER, emitter.coordBuffer)
-    gl.vertexAttribPointer(this.renderProgram.attributes.particleCoord, 2,
-                           gl.FLOAT, gl.FALSE, 0, 0)
-    gl.drawArrays(gl.POINTS, 0, emitter.width * emitter.height)
-    //gl.drawArrays(gl.POINTS, 0, 2)
+    gl.enableVertexAttribArray(this.renderProgram.attributes.particleCoord)
+    gl.vertexAttribPointer(this.renderProgram.attributes.particleCoord, 
+                           2, gl.FLOAT, gl.FALSE, 0, 0)
+    gl.drawArrays(gl.POINTS, 0, 
+                  emitter.posTargets[0].width * emitter.posTargets[0].height)
   }
-  gl.disable(gl.BLEND)
+  
+  //gl.bindBuffer(gl.ARRAY_BUFFER, null)
+  //gl.disableVertexAttribArray(this.renderProgram.attributes.particleCoord)
+  //gl.disable(gl.BLEND)
+  //gl.useProgram(null)
 }
