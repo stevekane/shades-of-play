@@ -9,6 +9,7 @@ void main () {
   vec2 textureIndex = gl_FragCoord.xy / viewport;
   vec3 velocity     = texture2D(velocities, textureIndex).xyz;
   vec3 position     = texture2D(positions, textureIndex).xyz;
+  float dTSeconds   = dT / 1000.0;
 
-  gl_FragColor  = vec4((dT * velocity) + position, 1.0);
+  gl_FragColor  = vec4((dTSeconds / 10.0 * velocity) + position, 1.0);
 }

@@ -29,7 +29,7 @@ function GPUParticleSystem (gl) {
   gl.clearColor(0, 0, 0, 0)
 
   //enable attribute arrays for all programs
-  //gl.enableVertexAttribArray(velocityProgram.attributes.screenCoord)
+  gl.enableVertexAttribArray(velocityProgram.attributes.screenCoord)
   gl.enableVertexAttribArray(positionProgram.attributes.screenCoord)
   gl.enableVertexAttribArray(renderProgram.attributes.particleCoord)
 
@@ -45,6 +45,40 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters) {
   var gl = this.gl
   var emitter 
   var tmpBuf
+
+  gl.useProgram(this.velocityProgram.program)
+  gl.disable(gl.DEPTH_TEST)
+  gl.blendFunc(gl.ONE, gl.ZERO)
+  gl.uniform1f(this.velocityProgram.uniforms.dT, dT)
+  gl.bindBuffer(gl.ARRAY_BUFFER, this.screenBuffer)
+  gl.enableVertexAttribArray(this.velocityProgram.attributes.screenCoord)
+  gl.vertexAttribPointer(this.velocityProgram.attributes.screenCoord, 
+                         2, gl.FLOAT, gl.FALSE, 0, 0)
+
+  for (var i = 0; i < gpuEmitters.length; i++) {
+    emitter = gpuEmitters[i]
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, emitter.velTargets[1].handle) 
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, emitter.velTargets[0].texture)
+    gl.uniform1i(this.velocityProgram.uniforms.positions, 0)
+    gl.uniform2f(this.velocityProgram.uniforms.viewport, 
+                 emitter.velTargets[1].width, 
+                 emitter.velTargets[1].height)
+    gl.viewport(0, 0, emitter.velTargets[1].width, 
+                      emitter.velTargets[1].height)
+    //gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.drawArrays(gl.TRIANGLES, 0, 6)
+
+    tmpBuf                = emitter.velTargets[0]
+    emitter.velTargets[0] = emitter.velTargets[1]
+    emitter.velTargets[1] = tmpBuf
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+  }
+
+  gl.disableVertexAttribArray(this.velocityProgram.attributes.screenCoord)
 
   gl.useProgram(this.positionProgram.program)
   gl.disable(gl.DEPTH_TEST)
@@ -90,8 +124,8 @@ GPUParticleSystem.prototype.render = function (gpuEmitters) {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
   gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight)
-  gl.enable(gl.BLEND)
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE)
+  //gl.enable(gl.BLEND)
+  //gl.blendFunc(gl.SRC_ALPHA, gl.ONE)
 
   for (var i = 0; i < gpuEmitters.length; i++) {
     emitter = gpuEmitters[i] 
@@ -104,11 +138,12 @@ GPUParticleSystem.prototype.render = function (gpuEmitters) {
     gl.vertexAttribPointer(this.renderProgram.attributes.particleCoord, 
                            2, gl.FLOAT, gl.FALSE, 0, 0)
     gl.drawArrays(gl.POINTS, 0, 
-                  emitter.posTargets[0].width * emitter.posTargets[0].height)
+                  //emitter.posTargets[0].width * emitter.posTargets[0].height)
+                  emitter.aliveCount)
   }
   
-  //gl.bindBuffer(gl.ARRAY_BUFFER, null)
-  //gl.disableVertexAttribArray(this.renderProgram.attributes.particleCoord)
+  gl.bindBuffer(gl.ARRAY_BUFFER, null)
+  gl.disableVertexAttribArray(this.renderProgram.attributes.particleCoord)
   //gl.disable(gl.BLEND)
-  //gl.useProgram(null)
+  gl.useProgram(null)
 }

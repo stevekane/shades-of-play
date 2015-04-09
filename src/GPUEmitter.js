@@ -1,4 +1,3 @@
-var GLFloatTexture = require("./GLFloatTexture")
 var GLRenderTarget = require("./GLRenderTarget")
 
 module.exports = GPUEmitter
@@ -25,6 +24,7 @@ function GPUEmitter (gl, x, y, z) {
   this.posTargets   = [posTarget1, posTarget2]
   this.velTargets   = [velTarget1, velTarget2]
   this.coordBuffer  = coordBuffer
+  this.aliveCount   = ROW_SIZE * ROW_SIZE
 }
 
 function buildParticleCoords (width, height) {
