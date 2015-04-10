@@ -4,7 +4,7 @@ module.exports = GPUEmitter
 
 var PARTICLE_STRIDE = 4
 
-function GPUEmitter (gl, x, y, z) {
+function GPUEmitter (gl, x, y, z, sourceTexture) {
   if (!gl.getExtension("OES_texture_float")) throw new Error("no float textures")
 
   var ROW_SIZE       = 256
@@ -21,10 +21,11 @@ function GPUEmitter (gl, x, y, z) {
   gl.bindBuffer(gl.ARRAY_BUFFER, coordBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, particleCoords, gl.STATIC_DRAW)
 
-  this.posTargets   = [posTarget1, posTarget2]
-  this.velTargets   = [velTarget1, velTarget2]
-  this.coordBuffer  = coordBuffer
-  this.aliveCount   = ROW_SIZE * ROW_SIZE
+  this.posTargets    = [posTarget1, posTarget2]
+  this.velTargets    = [velTarget1, velTarget2]
+  this.coordBuffer   = coordBuffer
+  this.aliveCount    = ROW_SIZE * ROW_SIZE
+  this.sourceTexture = sourceTexture
 }
 
 function buildParticleCoords (width, height) {

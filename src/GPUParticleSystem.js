@@ -132,6 +132,11 @@ GPUParticleSystem.prototype.render = function (gpuEmitters) {
   for (var i = 0; i < gpuEmitters.length; i++) {
     emitter = gpuEmitters[i] 
 
+    //NOTE: I have added some stuff about binding a source texture here
+    gl.activeTexture(gl.TEXTURE0 + 10)
+    gl.bindTexture(gl.TEXTURE_2D, emitter.sourceTexture)
+    gl.uniform1i(this.renderProgram.uniforms.source, 10)
+
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, emitter.posTargets[0].texture)
     gl.uniform1i(this.renderProgram.uniforms.positions, 0)

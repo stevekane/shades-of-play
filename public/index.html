@@ -5,28 +5,12 @@
     <link href="styles.css" rel="stylesheet" type="text/css" />
   </head>
   <body>
-    <div class="floating" id="status"></div>
-    <div class="floating" id="source"></div>
-    <div class="floating" id="errors"></div>
     <style>
       body {
         background: black; 
       }
     </style>
-    <script id="vertexSource" type="shader">
-      precision highp float;
-      
-      attribute vec2 aSquare;
-
-      void main () {
-        gl_Position = vec4(aSquare, 0, 1);
-      } 
-    </script>
-    <script id="fragmentSource" type="shader">
-      void main () {
-        gl_FragColor = vec4(1.0, 0.5, 0.5, 1.0);
-      } 
-    </script>
+    <video style="display:none;" id="video"></video>
     <script src="http://localhost:4003/socket.io/socket.io.js"></script>
     <script src="gpu-particles.js"></script>
   </body>
