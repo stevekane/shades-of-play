@@ -10,7 +10,7 @@ function GPUEmitter (gl, x, y, z) {
   var ROW_SIZE       = 256
   var COUNT          = ROW_SIZE * ROW_SIZE
   var positions      = initializeParticleXYZ(x, y, z, new Float32Array(4 * COUNT))
-  var velocities     = new Float32Array(4 * COUNT)
+  var velocities     = initializeParticleXYZ(x, y, z, new Float32Array(4 * COUNT))
   var posTarget1     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, positions)
   var posTarget2     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, positions)
   var velTarget1     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, velocities)
