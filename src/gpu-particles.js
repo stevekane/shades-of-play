@@ -9,28 +9,9 @@ var emitter           = new GPUEmitter(shell.gl, 0, 0, 0, vidTexture)
 var gpuParticleSystem = new GPUParticleSystem(shell.gl)
 var emitters          = [emitter]
 var videoEl           = document.getElementById("video")
-var getUserMedia      = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia
 
-videoEl.addEventListener("canplaythrough", function () {
-  videoEl.play()
-}, true)
-
-videoEl.addEventListener("ended", function () {
-  console.log("done")
-}, true)
-
-function withCam (stream) {
-  videoEl.src = window.URL.createObjectURL(stream)
-  videoEl.onloadedmetadata = function () {
-    videoEl.play() 
-  }
-}
-
-function withoutCam () {
-  console.log("we couldn't get access to your webcam")
-}
-
-getUserMedia.call(navigator, {audio: false, video: true}, withCam, withoutCam)
+videoEl.src   = "small.mp4"
+videoEl.muted = true
 
 
 shell.render = function () {
