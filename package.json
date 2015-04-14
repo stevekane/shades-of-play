@@ -32,6 +32,7 @@
     "watch-fs": "0.0.7"
   },
   "devDependencies": {
-    "browserify": "^9.0.3"
+    "browserify": "^9.0.3",
+    "tape": "^4.0.0"
   }
 }

@@ -30,7 +30,7 @@ function withoutCam () {
   console.log("we couldn't get access to your webcam")
 }
 
-getUserMedia.call(navigator, {audio: true, video: true}, withCam, withoutCam)
+getUserMedia.call(navigator, {audio: false, video: true}, withCam, withoutCam)
 
 
 shell.render = function () {
