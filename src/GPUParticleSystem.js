@@ -22,13 +22,11 @@ function GPUParticleSystem (gl) {
   if (positionProgram instanceof Error) console.log(positionProgram)
   if (renderProgram instanceof Error)   console.log(renderProgram)
 
-  //buffer full screen quad coord for both velocity and position prog
   gl.bindBuffer(gl.ARRAY_BUFFER, screenBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, screenQuad, gl.STATIC_DRAW)
 
   gl.clearColor(0, 0, 0, 0)
 
-  //enable attribute arrays for all programs
   gl.enableVertexAttribArray(velocityProgram.attributes.screenCoord)
   gl.enableVertexAttribArray(positionProgram.attributes.screenCoord)
   gl.enableVertexAttribArray(renderProgram.attributes.particleCoord)
@@ -59,7 +57,7 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters) {
                          2, gl.FLOAT, gl.FALSE, 0, 0)
 
   for (var i = 0; i < gpuEmitters.length; i++) {
-    emitter = gpuEmitters[i]
+    emitter = gpuEmitters[i].gpuEmitter
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, emitter.velTargets[1].handle) 
     gl.viewport(0, 0, emitter.velTargets[1].width, 
@@ -91,7 +89,7 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters) {
                          2, gl.FLOAT, gl.FALSE, 0, 0)
 
   for (var j = 0; j < gpuEmitters.length; j++) {
-    emitter = gpuEmitters[j]
+    emitter = gpuEmitters[j].gpuEmitter
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, emitter.posTargets[1].handle) 
     gl.viewport(0, 0, emitter.posTargets[1].width, 
@@ -130,9 +128,8 @@ GPUParticleSystem.prototype.render = function (gpuEmitters) {
   gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight)
 
   for (var i = 0; i < gpuEmitters.length; i++) {
-    emitter = gpuEmitters[i] 
+    emitter = gpuEmitters[i].gpuEmitter
 
-    //NOTE: I have added some stuff about binding a source texture here
     gl.activeTexture(gl.TEXTURE0 + 10)
     gl.bindTexture(gl.TEXTURE_2D, emitter.sourceTexture)
     gl.uniform1i(this.renderProgram.uniforms.source, 10)
