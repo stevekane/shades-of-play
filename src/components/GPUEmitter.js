@@ -49,7 +49,11 @@ function setParticleXYZ (index, x, y, z, array) {
 
 function initializeParticleXYZ (x, y, z, array) {
   for (var i = 0; i < array.length / PARTICLE_STRIDE; i++) {
-    setParticleXYZ(i, x + Math.random() - .5, y + Math.random() - .5, z, array)
+    setParticleXYZ(i, 
+                   x + Math.random() - .5, 
+                   y + Math.random() - .5, 
+                   (z + Math.random() - .5 ) * .05, 
+                   array)
   }
   return array
 }

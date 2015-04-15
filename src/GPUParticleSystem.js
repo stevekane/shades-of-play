@@ -1,6 +1,14 @@
-var glslify    = require("glslify")
-var GLProgram  = require("./GLProgram")
-var ScreenQuad = require("./ScreenQuad")
+var mat4        = require("gl-mat4")
+var glslify     = require("glslify")
+var GLProgram   = require("./GLProgram")
+var ScreenQuad  = require("./ScreenQuad")
+var matrixUtils = require("./matrix-utils")
+
+var computeTranslationMatrix = matrixUtils.computeTranslationMatrix
+var computeTransformMatrix   = matrixUtils.computeTransformMatrix
+var computeRotationMatrix    = matrixUtils.computeRotationMatrix
+var computeScaleMatrix       = matrixUtils.computeScaleMatrix
+var computeModelMatrix       = matrixUtils.computeModelMatrix
 
 module.exports = GPUParticleSystem
 
@@ -31,11 +39,16 @@ function GPUParticleSystem (gl) {
   gl.enableVertexAttribArray(positionProgram.attributes.screenCoord)
   gl.enableVertexAttribArray(renderProgram.attributes.particleCoord)
 
-  this.gl              = gl
-  this.screenBuffer    = screenBuffer
-  this.velocityProgram = velocityProgram
-  this.positionProgram = positionProgram
-  this.renderProgram   = renderProgram
+  this.gl                = gl
+  this.screenBuffer      = screenBuffer
+  this.velocityProgram   = velocityProgram
+  this.positionProgram   = positionProgram
+  this.renderProgram     = renderProgram
+  this.translationMatrix = mat4.create()
+  this.scaleMatrix       = mat4.create()
+  this.rotationMatrix    = mat4.create()
+  this.modelMatrix       = mat4.create()
+  this.transformMatrix   = mat4.create()
 }
 
 
@@ -118,21 +131,39 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters) {
   gl.useProgram(null)
 }
 
-GPUParticleSystem.prototype.render = function (gpuEmitters) {
-  var gl = this.gl
+GPUParticleSystem.prototype.render = function (gpuEmitters, camera) {
+  var gl               = this.gl
+  var viewMatrix       = camera.viewMatrix
+  var projectionMatrix = camera.projectionMatrix
   var emitter
 
   gl.useProgram(this.renderProgram.program)
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
   gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight)
+  gl.uniformMatrix4fv(this.renderProgram.uniforms.viewMatrix, false, viewMatrix) 
+  gl.uniformMatrix4fv(this.renderProgram.uniforms.projectionMatrix, false, projectionMatrix) 
+  gl.uniform2f(this.renderProgram.uniforms.screenDimensions, 
+               gl.drawingBufferWidth, gl.drawingBufferHeight)
 
   for (var i = 0; i < gpuEmitters.length; i++) {
+    physics = gpuEmitters[i].physics
     emitter = gpuEmitters[i].gpuEmitter
+
+    //compute the modelMatrix for this object
+    computeTranslationMatrix(this.translationMatrix, physics.position)
+    computeRotationMatrix(this.rotationMatrix, physics.rotation)
+    computeScaleMatrix(this.scaleMatrix, physics.scale)
+    computeModelMatrix(this.modelMatrix, this.translationMatrix, 
+                       this.scaleMatrix, this.rotationMatrix)
+    computeTransformMatrix(this.transformMatrix, this.modelMatrix,
+                           viewMatrix, projectionMatrix)
 
     gl.activeTexture(gl.TEXTURE0 + 10)
     gl.bindTexture(gl.TEXTURE_2D, emitter.sourceTexture)
     gl.uniform1i(this.renderProgram.uniforms.source, 10)
+    gl.uniformMatrix4fv(this.renderProgram.uniforms.modelMatrix, false, this.modelMatrix)
+    gl.uniformMatrix4fv(this.renderProgram.uniforms.transformMatrix, false, this.transformMatrix)
 
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, emitter.posTargets[0].texture)

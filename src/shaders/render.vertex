@@ -1,13 +1,31 @@
 attribute vec2 particleCoord;
 
 uniform sampler2D positions;
+uniform vec2 screenDimensions;
+uniform mat4 modelMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 transformMatrix;
 
-varying vec3 position;
+const float baseSize = 0.1;
+
+varying vec4 position;
+
+//TODO: there are some magic numbers in here
+float calculateSize (vec2 dimensions, mat4 viewMat, mat4 projMat, vec4 pos) {
+  vec4 eyePos    = viewMat * pos;
+  vec4 projVoxel = projMat * vec4(baseSize, baseSize, eyePos.z, eyePos.w);
+  vec2 projSize  = dimensions * projVoxel.xy / projVoxel.w;
+  float size     = .008 * (projSize.x + projSize.y);
+
+  return size;
+}
 
 void main () {
-  vec3 pos     = texture2D(positions, particleCoord).xyz;
+  vec4 pos     = texture2D(positions, particleCoord);
+  float size   = calculateSize(screenDimensions, viewMatrix, projectionMatrix, pos);
 
   position     = pos;
-  gl_Position  = vec4(pos, 1.0);
-  gl_PointSize = 2.0;
+  gl_Position  = transformMatrix * vec4(pos.xyz, 1.0);
+  gl_PointSize = size; 
 }

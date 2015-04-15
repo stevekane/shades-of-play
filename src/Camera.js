@@ -3,7 +3,7 @@ var vec3 = require("gl-vec3")
 
 module.exports = Camera
 
-function Camera (canvas, x, y, z, atX, atY, atZ) {
+function Camera (gl, x, y, z, atX, atY, atZ) {
   var viewMatrix = mat4.create()
   var projMatrix = mat4.create()
   var up         = vec3.fromValues(0, 1, 0)
@@ -13,8 +13,9 @@ function Camera (canvas, x, y, z, atX, atY, atZ) {
 
   Object.defineProperty(this, "projectionMatrix", {
     get: function () {
-      var angle = 50 / 180 * Math.PI
-      var ratio = canvas.clientWidth / canvas.clientHeight
+      //TODO: this is oddly hardcoded?
+      var angle = 50 / 180 * Math.PI 
+      var ratio = this.aspectRatio
 
       return mat4.perspective(projMatrix, angle, ratio, 1, 20)
     } 
@@ -28,7 +29,7 @@ function Camera (canvas, x, y, z, atX, atY, atZ) {
 
   Object.defineProperty(this, "aspectRatio", {
     get: function () {
-      return canvas.clientWidth / canvas.clientHeight 
+      return gl.drawingBufferWidth / gl.drawingBufferHeight
     } 
   })
 }
