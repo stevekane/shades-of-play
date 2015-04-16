@@ -2,6 +2,7 @@ var GLShell            = require("./GLShell")
 var GLVideoTexture     = require("./GLVideoTexture")
 var GPUParticleSystem  = require("./GPUParticleSystem")
 var GPUParticleEmitter = require("./assemblies/GPUParticleEmitter")
+var Attractor          = require("./assemblies/Attractor")
 var Camera             = require("./Camera")
 
 var shell             = new GLShell(document.body, 1920 / 1080)
@@ -9,15 +10,19 @@ var vidTexture        = new GLVideoTexture(shell.gl)
 var gpuParticleSystem = new GPUParticleSystem(shell.gl)
 
 var emitter     = new GPUParticleEmitter(0, 0, 0, shell.gl, vidTexture)
-var emitter2    = new GPUParticleEmitter(1, 1, 1, shell.gl, vidTexture)
-var entities    = [emitter, emitter2]
+//var emitter2    = new GPUParticleEmitter(1, 1, 1, shell.gl, vidTexture)
+var attractor   = new Attractor(0, 0, 0, 3)
+var entities    = [emitter, attractor]
 var gpuEmitters = entities.filter(function (e) { return !!e.gpuEmitter })
-var camera      = new Camera(shell.gl, 0, 0, 3.5, 0, 0, 0)
+var attractors  = entities.filter(function (e) { return !!e.attractive})
+var camera      = new Camera(shell.gl, 0, 0, 1.5, 0, 0, 0)
 
 var videoEl = document.getElementById("video")
 
-videoEl.src   = "small.mp4"
-videoEl.muted = true
+videoEl.src   = "bunny.mp4"
+videoEl.loop  = true
+//videoEl.muted = true
+videoEl.play()
 
 shell.render = function () {
   var gl = this.gl
@@ -39,5 +44,5 @@ shell.update = function (dT) {
     gpuEmitters[i].physics.rotation[1] += .01
   }
   
-  gpuParticleSystem.update(dT, gpuEmitters)
+  gpuParticleSystem.update(dT, gpuEmitters, attractors)
 }

@@ -52,11 +52,14 @@ function GPUParticleSystem (gl) {
 }
 
 
-GPUParticleSystem.prototype.update = function (dT, gpuEmitters) {
+GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
   var gl        = this.gl
   var dTSeconds = dT / 1000
   var emitter 
   var tmpBuf
+
+  //TODO: This is some hacky stuff to test a single attractor easily
+  var attractor = attractors[0]
 
   gl.useProgram(this.velocityProgram.program)
   gl.enable(gl.BLEND)
@@ -68,6 +71,12 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters) {
   gl.enableVertexAttribArray(this.velocityProgram.attributes.screenCoord)
   gl.vertexAttribPointer(this.velocityProgram.attributes.screenCoord, 
                          2, gl.FLOAT, gl.FALSE, 0, 0)
+  gl.uniform4f(this.velocityProgram.uniforms.attractor, 
+               attractor.physics.position[0],
+               attractor.physics.position[1],
+               attractor.physics.position[2],
+               attractor.physics.mass
+              )
 
   for (var i = 0; i < gpuEmitters.length; i++) {
     emitter = gpuEmitters[i].gpuEmitter
@@ -78,7 +87,10 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters) {
     gl.clear(gl.COLOR_BUFFER_BIT)
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, emitter.velTargets[0].texture)
+    gl.activeTexture(gl.TEXTURE0 + 1)
+    gl.bindTexture(gl.TEXTURE_2D, emitter.posTargets[0].texture)
     gl.uniform1i(this.velocityProgram.uniforms.velocities, 0)
+    gl.uniform1i(this.velocityProgram.uniforms.positions, 1)
     gl.uniform2f(this.velocityProgram.uniforms.viewport, 
                  emitter.velTargets[1].width, 
                  emitter.velTargets[1].height)
@@ -139,7 +151,7 @@ GPUParticleSystem.prototype.render = function (gpuEmitters, camera) {
 
   gl.useProgram(this.renderProgram.program)
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+  gl.clear(gl.COLOR_BUFFER_BIT)
   gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight)
   gl.uniformMatrix4fv(this.renderProgram.uniforms.viewMatrix, false, viewMatrix) 
   gl.uniformMatrix4fv(this.renderProgram.uniforms.projectionMatrix, false, projectionMatrix) 
@@ -150,7 +162,6 @@ GPUParticleSystem.prototype.render = function (gpuEmitters, camera) {
     physics = gpuEmitters[i].physics
     emitter = gpuEmitters[i].gpuEmitter
 
-    //compute the modelMatrix for this object
     computeTranslationMatrix(this.translationMatrix, physics.position)
     computeRotationMatrix(this.rotationMatrix, physics.rotation)
     computeScaleMatrix(this.scaleMatrix, physics.scale)

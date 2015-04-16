@@ -3,10 +3,14 @@ precision mediump float;
 uniform float dT;
 uniform vec2 viewport;
 uniform sampler2D velocities;
+uniform sampler2D positions;
+uniform vec4 attractor;
 
 void main () {
   vec2 textureIndex = gl_FragCoord.xy / viewport;
   vec3 velocity     = texture2D(velocities, textureIndex).xyz;
+  vec3 position     = texture2D(positions, textureIndex).xyz;
+  vec3 acc          = distance(position, attractor.xyz) * (attractor.xyz - position);
 
-  gl_FragColor = vec4(0.0 * dT + velocity, 1.0);
+  gl_FragColor = vec4(acc * dT + velocity, 1.0);
 }
