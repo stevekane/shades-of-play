@@ -7,10 +7,11 @@ var PARTICLE_STRIDE = 4
 function GPUEmitter (gl, sourceTexture) {
   if (!gl.getExtension("OES_texture_float")) throw new Error("no float textures")
 
-  var ROW_SIZE       = 512
+  var ROW_SIZE       = 256
   var COUNT          = ROW_SIZE * ROW_SIZE
   var positions      = initializeParticleXYZ(0, 0, 0, new Float32Array(4 * COUNT))
-  var velocities     = initializeParticleXYZ(0, 0, 0, new Float32Array(4 * COUNT))
+  //var velocities     = initializeParticleXYZ(0, 0, 0, new Float32Array(4 * COUNT))
+  var velocities     = new Float32Array(4 * COUNT)
   var posTarget1     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, positions)
   var posTarget2     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, positions)
   var velTarget1     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, velocities)
@@ -52,8 +53,8 @@ function initializeParticleXYZ (x, y, z, array) {
     setParticleXYZ(i, 
                    x + Math.random() - .5, 
                    y + Math.random() - .5, 
-                   0,
-                   //z + Math.random() - .5, 
+                   //0,
+                   z + Math.random() - .5, 
                    //(z + Math.random() - .5 ) * .05, 
                    array)
   }

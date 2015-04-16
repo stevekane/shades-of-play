@@ -79,7 +79,14 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
               )
 
   for (var i = 0; i < gpuEmitters.length; i++) {
+    physics = gpuEmitters[i].physics
     emitter = gpuEmitters[i].gpuEmitter
+
+    computeTranslationMatrix(this.translationMatrix, physics.position)
+    computeRotationMatrix(this.rotationMatrix, physics.rotation)
+    computeScaleMatrix(this.scaleMatrix, physics.scale)
+    computeModelMatrix(this.modelMatrix, this.translationMatrix, 
+                       this.scaleMatrix, this.rotationMatrix)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, emitter.velTargets[1].handle) 
     gl.viewport(0, 0, emitter.velTargets[1].width, 
@@ -94,6 +101,8 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
     gl.uniform2f(this.velocityProgram.uniforms.viewport, 
                  emitter.velTargets[1].width, 
                  emitter.velTargets[1].height)
+    gl.uniformMatrix4fv(this.velocityProgram.uniforms.modelMatrix, false, this.modelMatrix)
+                 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
     tmpBuf                = emitter.velTargets[0]

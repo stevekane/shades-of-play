@@ -5,12 +5,22 @@ uniform vec2 viewport;
 uniform sampler2D velocities;
 uniform sampler2D positions;
 uniform vec4 attractor;
+uniform mat4 modelMatrix;
+
+const float cons = 0.01;
+
+vec3 calcForce (float cons,  float mass1, float mass2, vec3 pos1, vec3 pos2) {
+  float dist = max(distance(pos1, pos2), .05);
+  vec3 dir   = (pos1 - pos2) / dist;
+
+  return cons * mass1 * mass2 / (dist * dist) * dir;
+}
 
 void main () {
   vec2 textureIndex = gl_FragCoord.xy / viewport;
   vec3 velocity     = texture2D(velocities, textureIndex).xyz;
-  vec3 position     = texture2D(positions, textureIndex).xyz;
-  vec3 acc          = distance(position, attractor.xyz) * (attractor.xyz - position);
+  vec3 position     = (modelMatrix * texture2D(positions, textureIndex)).xyz;
+  vec3 acc          = calcForce(cons, attractor.w, 1.0, attractor.xyz, position);
 
   gl_FragColor = vec4(acc * dT + velocity, 1.0);
 }
