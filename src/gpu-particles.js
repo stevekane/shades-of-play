@@ -22,7 +22,7 @@ var videoEl = document.getElementById("video")
 
 videoEl.src   = "bunny.mp4"
 videoEl.loop  = true
-//videoEl.muted = true
+videoEl.muted = true
 videoEl.play()
 
 shell.render = function () {

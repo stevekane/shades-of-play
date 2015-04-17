@@ -10,7 +10,7 @@ uniform mat4 modelMatrix;
 const float cons = 0.01;
 
 vec3 calcForce (float cons,  float mass1, float mass2, vec3 pos1, vec3 pos2) {
-  float dist = max(distance(pos1, pos2), .05);
+  float dist = max(distance(pos1, pos2), .1);
   vec3 dir   = (pos1 - pos2) / dist;
 
   return cons * mass1 * mass2 / (dist * dist) * dir;
