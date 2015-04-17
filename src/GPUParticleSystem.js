@@ -19,6 +19,9 @@ var positionFSrc = glslify(__dirname + "/shaders/position.fragment")
 var renderVSrc   = glslify(__dirname + "/shaders/render.vertex")
 var renderFSrc   = glslify(__dirname + "/shaders/render.fragment")
 
+var NUM_ATTRACTORS    = 3
+var DEFAULT_ATTRACTOR = [0, 0, 0, 0]
+
 function GPUParticleSystem (gl) {
   var velocityProgram = new GLProgram.fromSource(gl, velocityVSrc, velocityFSrc)
   var positionProgram = new GLProgram.fromSource(gl, positionVSrc, positionFSrc)
@@ -49,6 +52,9 @@ function GPUParticleSystem (gl) {
   this.rotationMatrix    = mat4.create()
   this.modelMatrix       = mat4.create()
   this.transformMatrix   = mat4.create()
+
+  //TODO: not sure if this is best implementation?
+  this.attractorData     = new Float32Array(NUM_ATTRACTORS * 4)
 }
 
 
@@ -58,9 +64,15 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
   var emitter 
   var tmpBuf
 
-  //TODO: This is some hacky stuff to test a single attractor easily
-  var attractor = attractors[0]
+  // setup attractor data array for this run of the simulation
+  for (var i = 0; i < NUM_ATTRACTORS; i++) {
+    this.attractorData.set(
+        attractors[i] ? attractors[i].physics.position : DEFAULT_ATTRACTOR, 
+        i * 4)
+    this.attractorData[i * 4 + 3] = attractors[i] ? attractors[i].physics.mass : 0
+  }
 
+  console.log(this.attractorData)
   gl.useProgram(this.velocityProgram.program)
   gl.enable(gl.BLEND)
   gl.blendFunc(gl.ONE, gl.ZERO)
@@ -71,12 +83,8 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
   gl.enableVertexAttribArray(this.velocityProgram.attributes.screenCoord)
   gl.vertexAttribPointer(this.velocityProgram.attributes.screenCoord, 
                          2, gl.FLOAT, gl.FALSE, 0, 0)
-  gl.uniform4f(this.velocityProgram.uniforms.attractor, 
-               attractor.physics.position[0],
-               attractor.physics.position[1],
-               attractor.physics.position[2],
-               attractor.physics.mass
-              )
+
+  gl.uniform4fv(this.velocityProgram.uniforms["attractors[0]"], this.attractorData)
 
   for (var i = 0; i < gpuEmitters.length; i++) {
     physics = gpuEmitters[i].physics

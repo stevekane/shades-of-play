@@ -10,10 +10,12 @@ var vidTexture        = new GLVideoTexture(shell.gl)
 var gpuParticleSystem = new GPUParticleSystem(shell.gl)
 
 var emitter     = new GPUParticleEmitter(0, 0, 0, shell.gl, vidTexture)
-var emitter2    = new GPUParticleEmitter(1, 1, 0,  shell.gl, vidTexture)
-var emitter3    = new GPUParticleEmitter(-1, -2, 0,  shell.gl, vidTexture)
+var emitter2    = new GPUParticleEmitter(-1, 1, 0,  shell.gl, vidTexture)
+var emitter3    = new GPUParticleEmitter(1, -1, 0,  shell.gl, vidTexture)
 var attractor   = new Attractor(0, 0, 0, 100)
-var entities    = [emitter, emitter2, emitter3, attractor]
+var attractor2  = new Attractor(1, 1, 0, 100)
+var attractor3  = new Attractor(-1, -1, 0, 100)
+var entities    = [emitter, emitter2, emitter3, attractor, attractor2, attractor3]
 var gpuEmitters = entities.filter(function (e) { return !!e.gpuEmitter })
 var attractors  = entities.filter(function (e) { return !!e.attractive})
 var camera      = new Camera(shell.gl, 0, 0, 3.5, 0, 0, 0)
@@ -26,17 +28,7 @@ videoEl.muted = true
 videoEl.play()
 
 shell.render = function () {
-  var gl = this.gl
-
-  //just a quick hack to ensure video is ready
-  if (videoEl.readyState === 4) {
-    gl.activeTexture(gl.TEXTURE0 + 10)
-    gl.bindTexture(gl.TEXTURE_2D, emitter.gpuEmitter.sourceTexture)
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
-                  gl.UNSIGNED_BYTE, videoEl)
-    gpuParticleSystem.render(gpuEmitters, camera)
-  }
+  gpuParticleSystem.render(gpuEmitters, camera)
 }
 
 shell.update = function (dT) {
