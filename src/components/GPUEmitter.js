@@ -4,7 +4,7 @@ module.exports = GPUEmitter
 
 var PARTICLE_STRIDE = 4
 
-function GPUEmitter (gl, sourceTexture) {
+function GPUEmitter (gl, color) {
   if (!gl.getExtension("OES_texture_float")) throw new Error("no float textures")
 
   var ROW_SIZE       = 256
@@ -26,7 +26,7 @@ function GPUEmitter (gl, sourceTexture) {
   this.velTargets    = [velTarget1, velTarget2]
   this.coordBuffer   = coordBuffer
   this.aliveCount    = ROW_SIZE * ROW_SIZE
-  this.sourceTexture = sourceTexture
+  this.color         = color
 }
 
 function buildParticleCoords (width, height) {

@@ -24,8 +24,8 @@ void main () {
   vec3 force        = vec3(0.0, 0.0, 0.0);
 
   for (int i = 0; i < 3; i++) {
-    force = force + calcForce(cons, attractors[i].w, particleMass, 
-                              attractors[i].xyz, position);
+    force += calcForce(cons, attractors[i].w, particleMass, 
+                       attractors[i].xyz, position);
   }
 
   gl_FragColor = vec4((force / particleMass) * dT + velocity, 1.0);

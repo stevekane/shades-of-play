@@ -9,12 +9,9 @@ uniform mat4 transformMatrix;
 
 const float baseSize = 1.0;
 
-varying vec4 position;
-
 void main () {
   vec4 pos = transformMatrix * texture2D(positions, particleCoord);
 
-  position     = pos;
   gl_Position  = pos;
   gl_PointSize = baseSize; 
 }

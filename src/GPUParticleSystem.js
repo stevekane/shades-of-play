@@ -72,7 +72,6 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
     this.attractorData[i * 4 + 3] = attractors[i] ? attractors[i].physics.mass : 0
   }
 
-  console.log(this.attractorData)
   gl.useProgram(this.velocityProgram.program)
   gl.enable(gl.BLEND)
   gl.blendFunc(gl.ONE, gl.ZERO)
@@ -83,7 +82,6 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
   gl.enableVertexAttribArray(this.velocityProgram.attributes.screenCoord)
   gl.vertexAttribPointer(this.velocityProgram.attributes.screenCoord, 
                          2, gl.FLOAT, gl.FALSE, 0, 0)
-
   gl.uniform4fv(this.velocityProgram.uniforms["attractors[0]"], this.attractorData)
 
   for (var i = 0; i < gpuEmitters.length; i++) {
@@ -170,8 +168,10 @@ GPUParticleSystem.prototype.render = function (gpuEmitters, camera) {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   gl.clear(gl.COLOR_BUFFER_BIT)
   gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight)
-  gl.uniformMatrix4fv(this.renderProgram.uniforms.viewMatrix, false, viewMatrix) 
-  gl.uniformMatrix4fv(this.renderProgram.uniforms.projectionMatrix, false, projectionMatrix) 
+  gl.uniformMatrix4fv(this.renderProgram.uniforms.viewMatrix, 
+                      false, viewMatrix) 
+  gl.uniformMatrix4fv(this.renderProgram.uniforms.projectionMatrix, 
+                      false, projectionMatrix) 
   gl.uniform2f(this.renderProgram.uniforms.screenDimensions, 
                gl.drawingBufferWidth, gl.drawingBufferHeight)
 
@@ -187,12 +187,15 @@ GPUParticleSystem.prototype.render = function (gpuEmitters, camera) {
     computeTransformMatrix(this.transformMatrix, this.modelMatrix,
                            viewMatrix, projectionMatrix)
 
-    gl.activeTexture(gl.TEXTURE0 + 10)
-    gl.bindTexture(gl.TEXTURE_2D, emitter.sourceTexture)
-    gl.uniform1i(this.renderProgram.uniforms.source, 10)
-    gl.uniformMatrix4fv(this.renderProgram.uniforms.modelMatrix, false, this.modelMatrix)
-    gl.uniformMatrix4fv(this.renderProgram.uniforms.transformMatrix, false, this.transformMatrix)
-
+    gl.uniformMatrix4fv(this.renderProgram.uniforms.modelMatrix, 
+                        false, this.modelMatrix)
+    gl.uniformMatrix4fv(this.renderProgram.uniforms.transformMatrix, 
+                        false, this.transformMatrix)
+    gl.uniform4f(this.renderProgram.uniforms.color, 
+                 emitter.color[0],
+                 emitter.color[1],
+                 emitter.color[2],
+                 emitter.color[3])
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, emitter.posTargets[0].texture)
     gl.uniform1i(this.renderProgram.uniforms.positions, 0)
@@ -202,9 +205,4 @@ GPUParticleSystem.prototype.render = function (gpuEmitters, camera) {
                            2, gl.FLOAT, gl.FALSE, 0, 0)
     gl.drawArrays(gl.POINTS, 0, emitter.aliveCount)
   }
-  
-  gl.bindBuffer(gl.ARRAY_BUFFER, null)
-  gl.disableVertexAttribArray(this.renderProgram.attributes.particleCoord)
-  //gl.disable(gl.BLEND)
-  gl.useProgram(null)
 }
