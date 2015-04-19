@@ -10,8 +10,6 @@ var randomVector       = randUtils.randomVector
 var shell              = new GLShell(document.body, 1920 / 1080)
 var gpuParticleSystem  = new GPUParticleSystem(shell.gl)
 
-console.log("yo")
-
 var entities = [
   new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
   new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
