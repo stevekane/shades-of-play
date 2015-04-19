@@ -66,7 +66,6 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
   gl.depthMask(false)
   gl.uniform1f(this.velocityProgram.uniforms.dT, dTSeconds)
   gl.bindBuffer(gl.ARRAY_BUFFER, this.screenBuffer)
-  gl.enableVertexAttribArray(this.velocityProgram.attributes.screenCoord)
   gl.vertexAttribPointer(this.velocityProgram.attributes.screenCoord, 
                          2, gl.FLOAT, gl.FALSE, 0, 0)
   for (var i = 0; i < attractors.length; i++) {
@@ -110,17 +109,11 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
     tmpBuf                = emitter.velTargets[0]
     emitter.velTargets[0] = emitter.velTargets[1]
     emitter.velTargets[1] = tmpBuf
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
-
-  gl.disableVertexAttribArray(this.velocityProgram.attributes.screenCoord)
 
   gl.useProgram(this.positionProgram.program)
   gl.uniform1f(this.positionProgram.uniforms.dT, dTSeconds)
   gl.bindBuffer(gl.ARRAY_BUFFER, this.screenBuffer)
-  gl.enableVertexAttribArray(this.positionProgram.attributes.screenCoord)
   gl.vertexAttribPointer(this.positionProgram.attributes.screenCoord, 
                          2, gl.FLOAT, gl.FALSE, 0, 0)
 
@@ -145,13 +138,7 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
     tmpBuf                = emitter.posTargets[0]
     emitter.posTargets[0] = emitter.posTargets[1]
     emitter.posTargets[1] = tmpBuf
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
-
-  gl.disableVertexAttribArray(this.positionProgram.attributes.screenCoord)
-  gl.useProgram(null)
 }
 
 GPUParticleSystem.prototype.render = function (camera, lights, gpuEmitters) {
@@ -210,7 +197,6 @@ GPUParticleSystem.prototype.render = function (camera, lights, gpuEmitters) {
     gl.bindTexture(gl.TEXTURE_2D, emitter.posTargets[0].texture)
     gl.uniform1i(this.renderProgram.uniforms.positions, 0)
     gl.bindBuffer(gl.ARRAY_BUFFER, emitter.coordBuffer)
-    gl.enableVertexAttribArray(this.renderProgram.attributes.particleCoord)
     gl.vertexAttribPointer(this.renderProgram.attributes.particleCoord, 
                            2, gl.FLOAT, gl.FALSE, 0, 0)
     gl.drawArrays(gl.POINTS, 0, emitter.aliveCount)
