@@ -1,6 +1,6 @@
 var mat4        = require("gl-mat4")
 var glslify     = require("glslify")
-var GLProgram   = require("./GLProgram")
+var GLProgram   = require("./types/GLProgram")
 var ScreenQuad  = require("./ScreenQuad")
 var matrixUtils = require("./matrix-utils")
 
@@ -18,9 +18,6 @@ var positionVSrc = glslify(__dirname + "/shaders/physics.vertex")
 var positionFSrc = glslify(__dirname + "/shaders/position.fragment")
 var renderVSrc   = glslify(__dirname + "/shaders/render.vertex")
 var renderFSrc   = glslify(__dirname + "/shaders/render.fragment")
-
-var NUM_ATTRACTORS    = 3
-var DEFAULT_ATTRACTOR = [0, 0, 0, 0]
 
 function GPUParticleSystem (gl) {
   var velocityProgram = new GLProgram.fromSource(gl, velocityVSrc, velocityFSrc)
@@ -52,25 +49,15 @@ function GPUParticleSystem (gl) {
   this.rotationMatrix    = mat4.create()
   this.modelMatrix       = mat4.create()
   this.transformMatrix   = mat4.create()
-
-  //TODO: not sure if this is best implementation?
-  this.attractorData     = new Float32Array(NUM_ATTRACTORS * 4)
 }
 
 
 GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
   var gl        = this.gl
   var dTSeconds = dT / 1000
+  var vUniforms = this.velocityProgram.uniforms
   var emitter 
   var tmpBuf
-
-  // setup attractor data array for this run of the simulation
-  for (var i = 0; i < NUM_ATTRACTORS; i++) {
-    this.attractorData.set(
-        attractors[i] ? attractors[i].physics.position : DEFAULT_ATTRACTOR, 
-        i * 4)
-    this.attractorData[i * 4 + 3] = attractors[i] ? attractors[i].physics.mass : 0
-  }
 
   gl.useProgram(this.velocityProgram.program)
   gl.enable(gl.BLEND)
@@ -82,7 +69,15 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
   gl.enableVertexAttribArray(this.velocityProgram.attributes.screenCoord)
   gl.vertexAttribPointer(this.velocityProgram.attributes.screenCoord, 
                          2, gl.FLOAT, gl.FALSE, 0, 0)
-  gl.uniform4fv(this.velocityProgram.uniforms["attractors[0]"], this.attractorData)
+  for (var i = 0; i < attractors.length; i++) {
+    gl.uniform3f(vUniforms["attractors[" + i + "].position"],
+                 attractors[i].physics.position[0],
+                 attractors[i].physics.position[1],
+                 attractors[i].physics.position[2])
+    gl.uniform1f(vUniforms["attractors[" + i + "].mass"],
+                 attractors[i].physics.mass)
+  }
+
 
   for (var i = 0; i < gpuEmitters.length; i++) {
     physics = gpuEmitters[i].physics
@@ -107,7 +102,8 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
     gl.uniform2f(this.velocityProgram.uniforms.viewport, 
                  emitter.velTargets[1].width, 
                  emitter.velTargets[1].height)
-    gl.uniformMatrix4fv(this.velocityProgram.uniforms.modelMatrix, false, this.modelMatrix)
+    gl.uniformMatrix4fv(this.velocityProgram.uniforms.modelMatrix, 
+                        false, this.modelMatrix)
                  
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
@@ -158,10 +154,11 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
   gl.useProgram(null)
 }
 
-GPUParticleSystem.prototype.render = function (gpuEmitters, camera) {
+GPUParticleSystem.prototype.render = function (camera, lights, gpuEmitters) {
   var gl               = this.gl
   var viewMatrix       = camera.viewMatrix
   var projectionMatrix = camera.projectionMatrix
+  var rUniforms        = this.renderProgram.uniforms
   var emitter
 
   gl.useProgram(this.renderProgram.program)
@@ -174,6 +171,19 @@ GPUParticleSystem.prototype.render = function (gpuEmitters, camera) {
                       false, projectionMatrix) 
   gl.uniform2f(this.renderProgram.uniforms.screenDimensions, 
                gl.drawingBufferWidth, gl.drawingBufferHeight)
+
+  for (var i = 0; i < lights.length; i++) {
+    gl.uniform3f(rUniforms["lights[" + i + "].position"],
+                 lights[i].physics.position[0],
+                 lights[i].physics.position[1],
+                 lights[i].physics.position[2])
+    gl.uniform3f(rUniforms["lights[" + i + "].color"],
+                 lights[i].light.color[0],
+                 lights[i].light.color[1],
+                 lights[i].light.color[2])
+    gl.uniform1f(rUniforms["lights[" + i + "].intensity"],
+                 lights[i].light.intensity)
+  }
 
   for (var i = 0; i < gpuEmitters.length; i++) {
     physics = gpuEmitters[i].physics

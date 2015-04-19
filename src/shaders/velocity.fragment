@@ -1,14 +1,20 @@
 precision mediump float;
 
+const float PARTICLE_MASS       = 1.0;
+const float ATTRACTION_CONSTANT = 0.01;
+
 uniform float dT;
 uniform vec2 viewport;
 uniform sampler2D velocities;
 uniform sampler2D positions;
-uniform vec4 attractors[3];
 uniform mat4 modelMatrix;
 
-const float particleMass = 1.0;
-const float cons = 0.01;
+struct Attractor {
+  vec3 position;
+  float mass;
+};
+
+uniform Attractor attractors[3];
 
 vec3 calcForce (float cons,  float mass1, float mass2, vec3 pos1, vec3 pos2) {
   float dist = max(distance(pos1, pos2), .1);
@@ -24,9 +30,12 @@ void main () {
   vec3 force        = vec3(0.0, 0.0, 0.0);
 
   for (int i = 0; i < 3; i++) {
-    force += calcForce(cons, attractors[i].w, particleMass, 
-                       attractors[i].xyz, position);
+    force += calcForce(ATTRACTION_CONSTANT, 
+                       attractors[i].mass, 
+                       PARTICLE_MASS, 
+                       attractors[i].position,
+                       position);
   }
 
-  gl_FragColor = vec4((force / particleMass) * dT + velocity, 1.0);
+  gl_FragColor = vec4((force / PARTICLE_MASS) * dT + velocity, 1.0);
 }

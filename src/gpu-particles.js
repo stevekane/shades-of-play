@@ -1,26 +1,34 @@
 var GLShell            = require("./GLShell")
-var GLVideoTexture     = require("./GLVideoTexture")
 var GPUParticleSystem  = require("./GPUParticleSystem")
 var GPUParticleEmitter = require("./assemblies/GPUParticleEmitter")
 var Attractor          = require("./assemblies/Attractor")
+var PointLight         = require("./assemblies/PointLight")
 var Camera             = require("./Camera")
+var randUtils          = require("./random-utils")
+var randomBound        = randUtils.randomBound
+var randomVector       = randUtils.randomVector
+var shell              = new GLShell(document.body, 1920 / 1080)
+var gpuParticleSystem  = new GPUParticleSystem(shell.gl)
 
-var shell             = new GLShell(document.body, 1920 / 1080)
-var gpuParticleSystem = new GPUParticleSystem(shell.gl)
-
-var emitter     = new GPUParticleEmitter(0, 0, 0, shell.gl, [0, 0, 1, 0])
-var emitter2    = new GPUParticleEmitter(-1, 1, 0,  shell.gl, [1, 0, 0, 0])
-var emitter3    = new GPUParticleEmitter(1, -1, 0,  shell.gl, [0, 1, 0, 0])
-var attractor   = new Attractor(0, 0, 0, 150)
-var attractor2  = new Attractor(1, 1, 0, 140)
-var attractor3  = new Attractor(-1, -1, 0, 100)
-var entities    = [emitter, emitter2, emitter3, attractor, attractor2, attractor3]
-var gpuEmitters = entities.filter(function (e) { return !!e.gpuEmitter })
-var attractors  = entities.filter(function (e) { return !!e.attractive})
-var camera      = new Camera(shell.gl, 0, 0, 3.5, 0, 0, 0)
+var entities = [
+  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
+  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
+  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
+  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
+  new Attractor(randomVector(3, -1, 1), randomBound(0, 200)),
+  new Attractor(randomVector(3, -1, 1), randomBound(0, 200)),
+  new Attractor(randomVector(3, -1, 1), randomBound(0, 200)),
+  new PointLight(randomVector(3, -1, 1), randomVector(3, 0, 1), 1),
+  new PointLight(randomVector(3, -1, 1), randomVector(3, 0, 1), 1),
+  new PointLight(randomVector(3, -1, 1), randomVector(3, 0, 1), 1)
+]
+var gpuEmitters = entities.filter(function (e) { return !!e.gpuEmitter && !!e.physics})
+var attractors  = entities.filter(function (e) { return !!e.attractive && !!e.physics})
+var lights      = entities.filter(function (e) { return !!e.light && !!e.physics})
+var camera      = new Camera(shell.gl, 0, 0, 2.5, 0, 0, 0)
 
 shell.render = function () {
-  gpuParticleSystem.render(gpuEmitters, camera)
+  gpuParticleSystem.render(camera, lights, gpuEmitters)
 }
 
 shell.update = function (dT) {

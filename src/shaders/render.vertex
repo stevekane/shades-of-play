@@ -7,11 +7,16 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 transformMatrix;
 
-const float baseSize = 1.0;
+const float baseSize = 1.5;
+
+varying vec3 position;
 
 void main () {
-  vec4 pos = transformMatrix * texture2D(positions, particleCoord);
+  vec4 pos            = texture2D(positions, particleCoord);
+  vec4 worldSpacePos  = modelMatrix * pos;
+  vec4 screenSpacePos = transformMatrix * pos;
 
-  gl_Position  = pos;
+  position     = worldSpacePos.xyz;
+  gl_Position  = screenSpacePos;
   gl_PointSize = baseSize; 
 }
