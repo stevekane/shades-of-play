@@ -4,7 +4,7 @@ var http       = require("http")
 var fs         = require("fs")
 var nodeStatic = require("node-static")
 
-var PORT = 4003
+var PORT = process.env.PORT || 4003
 
 var fileServer = new nodeStatic.Server("./public")
 var httpServer = http.createServer(function (req, res) {
