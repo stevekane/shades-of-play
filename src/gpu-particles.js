@@ -1,5 +1,7 @@
 var GLShell            = require("./GLShell")
 var GPUParticleSystem  = require("./GPUParticleSystem")
+var KeyboardManager    = require("./KeyboardManager")
+var GamepadManager     = require("./GamepadManager")
 var GPUParticleEmitter = require("./assemblies/GPUParticleEmitter")
 var Attractor          = require("./assemblies/Attractor")
 var PointLight         = require("./assemblies/PointLight")
@@ -9,6 +11,8 @@ var randomBound        = randUtils.randomBound
 var randomVector       = randUtils.randomVector
 var shell              = new GLShell(document.body, 1920 / 1080)
 var gpuParticleSystem  = new GPUParticleSystem(shell.gl)
+var keyboardManager    = new KeyboardManager(document.body)
+var gamepadManager     = new GamepadManager(window, navigator)
 
 var entities = [
   new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
@@ -32,5 +36,11 @@ shell.render = function () {
 }
 
 shell.update = function (dT) {
+  keyboardManager.tick(dT)
+  gamepadManager.tick(dT)
+
+  if (gamepadManager.padStates[0].justDowns[0]) console.log("a was pushed")
+  if (gamepadManager.padStates[0].isDowns[0]) console.log("a is down")
+  if (gamepadManager.padStates[0].justUps[0]) console.log("a was released")
   gpuParticleSystem.update(dT, gpuEmitters, attractors)
 }
