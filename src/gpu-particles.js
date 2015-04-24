@@ -19,6 +19,12 @@ var entities = [
   new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
   new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
   new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
+  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
+  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
+  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
+  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
+  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
+  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
   new Attractor(randomVector(3, -1, 1), randomBound(0, 200)),
   new Attractor(randomVector(3, -1, 1), randomBound(0, 200)),
   new Attractor(randomVector(3, -1, 1), randomBound(0, 200)),
@@ -39,8 +45,25 @@ shell.update = function (dT) {
   keyboardManager.tick(dT)
   gamepadManager.tick(dT)
 
-  if (gamepadManager.padStates[0].justDowns[0]) console.log("a was pushed")
-  if (gamepadManager.padStates[0].isDowns[0]) console.log("a is down")
-  if (gamepadManager.padStates[0].justUps[0]) console.log("a was released")
+  //down
+  if (gamepadManager.padStates[0].isDowns[0]) {
+    attractors[0].physics.position[1] -= .01
+  }
+
+  //right
+  if (gamepadManager.padStates[0].isDowns[1]) {
+    attractors[0].physics.position[0] += 0.01
+  }
+
+  //left
+  if (gamepadManager.padStates[0].isDowns[2]) {
+    attractors[0].physics.position[0] -= 0.01
+  }
+
+  //up
+  if (gamepadManager.padStates[0].isDowns[3]) {
+    attractors[0].physics.position[1] += 0.01
+  }
+  
   gpuParticleSystem.update(dT, gpuEmitters, attractors)
 }
