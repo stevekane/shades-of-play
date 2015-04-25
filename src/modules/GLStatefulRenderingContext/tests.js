@@ -10,7 +10,7 @@ var fSrc = "void main () { gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); }"
 test("Program and shader related functions store state correctly", function (t) {
   var ctx = canvas.getContext("webgl")
   var gl  = new GLStatefulRenderingContext(ctx)
-  var p   = gl.createProgram();
+  var p   = gl.createProgram()
   var vs  = gl.createShader(gl.ctx.VERTEX_SHADER)
   var fs  = gl.createShader(gl.ctx.FRAGMENT_SHADER)
 
@@ -35,7 +35,7 @@ test("Program and shader related functions store state correctly", function (t) 
 test("proxying through to underlying gl context works", function (t) {
   var ctx = canvas.getContext("webgl")
   var gl  = new GLStatefulRenderingContext(ctx)
-  var p   = gl.createProgram();
+  var p   = gl.createProgram()
   var vs  = gl.createShader(gl.ctx.VERTEX_SHADER)
   var fs  = gl.createShader(gl.ctx.FRAGMENT_SHADER)
 
@@ -56,4 +56,4 @@ test("proxying through to underlying gl context works", function (t) {
   t.same(gl.programs.get(p).attachedShaders.vertex, vs, "vertex shader attached")
   t.same(gl.programs.get(p).attachedShaders.fragment, fs, "fragment shader attached")
   t.end()
-});
+})

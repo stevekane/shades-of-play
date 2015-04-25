@@ -136,4 +136,4 @@ function GLStatefulRenderingContext (ctx) {
   // SHADERS -- END
 
   this.ctx = ctx
-};
+}
