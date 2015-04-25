@@ -41,8 +41,19 @@ test("proxying through to underlying gl context works", function (t) {
 
   gl.shaderSource(vs, vSrc)
   gl.shaderSource(fs, fSrc)
+  gl.compileShader(vs)
+  gl.compileShader(fs)
   gl.attachShader(p, vs)
   gl.attachShader(p, fs)
+  gl.linkProgram(p)
 
+  t.same(gl.shaders.get(vs).src, vSrc, "vertex shader src correct")
+  t.same(gl.shaders.get(fs).src, fSrc, "fragment shader src correct")
+  t.same(gl.shaders.get(vs).type, ctx.VERTEX_SHADER, "vertex shader type correct")
+  t.same(gl.shaders.get(fs).type, ctx.FRAGMENT_SHADER, "fragment shader type correct")
+  t.true(gl.shaders.get(vs).compiled, "vertex shader compiled")
+  t.true(gl.shaders.get(fs).compiled, "fragment shader compiled")
+  t.same(gl.programs.get(p).attachedShaders.vertex, vs, "vertex shader attached")
+  t.same(gl.programs.get(p).attachedShaders.fragment, fs, "fragment shader attached")
   t.end()
 });
