@@ -43,7 +43,9 @@ function ProgramState () {
 // TODO: implement when ready
 function RenderBufferState () {}
 
-function GLStatefulRenderingContext (ctx) {
+function GLStatefulRenderingContext (canvas) {
+  var ctx = canvas.getContext('webgl')
+
   this.shaders       = new WeakMap
   this.programs      = new WeakMap
   this.activeProgram = null
