@@ -2,33 +2,20 @@ var GLRenderTarget = require("../types/GLRenderTarget")
 
 module.exports = GPUEmitter
 
-var PARTICLE_STRIDE = 4
+function ArrayOf (Ctor, count, vector) {
+  var vLen     = vector.length
+  var totalLen = count * vLen
+  var ar       = new Ctor(totalLen)
 
-function GPUEmitter (gl, color) {
-  if (!gl.getExtension("OES_texture_float")) throw new Error("no float textures")
-
-  var ROW_SIZE       = 256
-  var COUNT          = ROW_SIZE * ROW_SIZE
-  var positions      = initializeParticleXYZ(0, 0, 0, new Float32Array(4 * COUNT))
-  var velocities     = initializeParticleXYZ(0, 0, 0, new Float32Array(4 * COUNT))
-  var posTarget1     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, positions)
-  var posTarget2     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, positions)
-  var velTarget1     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, velocities)
-  var velTarget2     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, velocities)
-  var particleCoords = buildParticleCoords(ROW_SIZE, ROW_SIZE)
-  var coordBuffer    = gl.createBuffer()
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, coordBuffer)
-  gl.bufferData(gl.ARRAY_BUFFER, particleCoords, gl.STATIC_DRAW)
-
-  this.posTargets    = [posTarget1, posTarget2]
-  this.velTargets    = [velTarget1, velTarget2]
-  this.coordBuffer   = coordBuffer
-  this.aliveCount    = ROW_SIZE * ROW_SIZE
-  this.color         = color
+  for (var i = 0; i < count; i++) {
+    for (var j = 0; j < vLen; j++) {
+      ar[i * vLen + j] = vector[j]
+    }
+  }
+  return ar
 }
 
-function buildParticleCoords (width, height) {
+function ParticleCoords (width, height) {
   var array = new Float32Array(width * 2 * height)
 
   for (var j = 0; j < height; j++) {
@@ -40,20 +27,48 @@ function buildParticleCoords (width, height) {
   return array
 }
 
-function setParticleXYZ (index, x, y, z, array) {
-  array[PARTICLE_STRIDE * index]     = x
-  array[PARTICLE_STRIDE * index + 1] = y
-  array[PARTICLE_STRIDE * index + 2] = z
-  array[PARTICLE_STRIDE * index + 3] = 1
-}
+function GPUEmitter (gl, color) {
+  if (!gl.getExtension("OES_texture_float")) throw new Error("no float textures")
 
-function initializeParticleXYZ (x, y, z, array) {
-  for (var i = 0; i < array.length / PARTICLE_STRIDE; i++) {
-    setParticleXYZ(i, 
-                   x + Math.random() - .5, 
-                   y + Math.random() - .5, 
-                   z + Math.random() - .5, 
-                   array)
+  var ROW_SIZE       = 128
+  var COUNT          = ROW_SIZE * ROW_SIZE
+  var LIFETIME       = 1
+
+  /*
+  struct prop {
+    timeAlive,
+    FREE,
+    FREE,
+    FREE
   }
-  return array
+  */
+  var props          = new ArrayOf(Float32Array, COUNT, [0, 0, 0, 0])
+  var positions      = new ArrayOf(Float32Array, COUNT, [0, 0, 0, 1])
+  var velocities     = new ArrayOf(Float32Array, COUNT, [1, 1, 0, 1])
+
+  //here we are staggering the timeAlive to get a fountain
+  for (var i = 0; i < COUNT; i++) {
+    props[i * 4] = (LIFETIME / COUNT) * i
+  }
+
+  var propTarget1    = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, props)
+  var propTarget2    = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, props)
+  var posTarget1     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, positions)
+  var posTarget2     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, positions)
+  var velTarget1     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, velocities)
+  var velTarget2     = new GLRenderTarget(gl, ROW_SIZE, ROW_SIZE, velocities)
+
+  var particleCoords = new ParticleCoords(ROW_SIZE, ROW_SIZE)
+  var coordBuffer    = gl.createBuffer()
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, coordBuffer)
+  gl.bufferData(gl.ARRAY_BUFFER, particleCoords, gl.STATIC_DRAW)
+
+  this.propTargets = [propTarget1, propTarget2]
+  this.posTargets  = [posTarget1, posTarget2]
+  this.velTargets  = [velTarget1, velTarget2]
+  this.coordBuffer = coordBuffer
+  this.count       = COUNT
+  this.lifeTime    = LIFETIME
+  this.color       = color
 }

@@ -16,18 +16,9 @@ var gamepadManager     = new GamepadManager(window, navigator)
 
 var entities = [
   new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
-  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
-  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
-  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
-  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
-  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
-  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
-  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
-  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
-  new GPUParticleEmitter(shell.gl, randomVector(3, -1, 1), randomVector(4, 0, 1)),
-  new Attractor(randomVector(3, -1, 1), randomBound(0, 200)),
-  new Attractor(randomVector(3, -1, 1), randomBound(0, 200)),
-  new Attractor(randomVector(3, -1, 1), randomBound(0, 200)),
+  new Attractor(randomVector(3, -1, 1), randomBound(0, 1000)),
+  new Attractor(randomVector(3, -1, 1), randomBound(0, 1000)),
+  new Attractor(randomVector(3, -1, 1), randomBound(0, 1000)),
   new PointLight(randomVector(3, -1, 1), randomVector(3, 0, 1), 1),
   new PointLight(randomVector(3, -1, 1), randomVector(3, 0, 1), 1),
   new PointLight(randomVector(3, -1, 1), randomVector(3, 0, 1), 1)

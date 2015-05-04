@@ -7,7 +7,7 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 transformMatrix;
 
-const float baseSize = 1.5;
+const float baseSize = 5.5;
 
 varying vec3 position;
 

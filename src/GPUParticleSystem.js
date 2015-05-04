@@ -12,6 +12,8 @@ var computeModelMatrix       = matrixUtils.computeModelMatrix
 
 module.exports = GPUParticleSystem
 
+var timerVSrc    = glslify(__dirname + "/shaders/timer.vertex")
+var timerFSrc    = glslify(__dirname + "/shaders/timer.fragment")
 var velocityVSrc = glslify(__dirname + "/shaders/physics.vertex")
 var velocityFSrc = glslify(__dirname + "/shaders/velocity.fragment")
 var positionVSrc = glslify(__dirname + "/shaders/physics.vertex")
@@ -20,12 +22,14 @@ var renderVSrc   = glslify(__dirname + "/shaders/render.vertex")
 var renderFSrc   = glslify(__dirname + "/shaders/render.fragment")
 
 function GPUParticleSystem (gl) {
+  var timerProgram    = new GLProgram.fromSource(gl, timerVSrc, timerFSrc)
   var velocityProgram = new GLProgram.fromSource(gl, velocityVSrc, velocityFSrc)
   var positionProgram = new GLProgram.fromSource(gl, positionVSrc, positionFSrc)
   var renderProgram   = new GLProgram.fromSource(gl, renderVSrc, renderFSrc)
   var screenQuad      = new ScreenQuad
   var screenBuffer    = gl.createBuffer()
 
+  if (timerProgram instanceof Error)    console.log(timerProgram)
   if (velocityProgram instanceof Error) console.log(velocityProgram)
   if (positionProgram instanceof Error) console.log(positionProgram)
   if (renderProgram instanceof Error)   console.log(renderProgram)
@@ -33,14 +37,16 @@ function GPUParticleSystem (gl) {
   gl.bindBuffer(gl.ARRAY_BUFFER, screenBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, screenQuad, gl.STATIC_DRAW)
 
-  gl.clearColor(0, 0, 0, 0)
+  gl.clearColor(1, 1, 1, 1)
 
+  gl.enableVertexAttribArray(velocityProgram.attributes.screenCoord)
   gl.enableVertexAttribArray(velocityProgram.attributes.screenCoord)
   gl.enableVertexAttribArray(positionProgram.attributes.screenCoord)
   gl.enableVertexAttribArray(renderProgram.attributes.particleCoord)
 
   this.gl                = gl
   this.screenBuffer      = screenBuffer
+  this.timerProgram      = timerProgram
   this.velocityProgram   = velocityProgram
   this.positionProgram   = positionProgram
   this.renderProgram     = renderProgram
@@ -59,6 +65,38 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
   var emitter 
   var tmpBuf
 
+  //TIMER UPDATE
+  gl.useProgram(this.timerProgram.program)
+  gl.disable(gl.BLEND)
+  gl.disable(gl.DEPTH_TEST)
+  gl.depthMask(false)
+  gl.uniform1f(this.timerProgram.uniforms.dT, dTSeconds)
+  gl.bindBuffer(gl.ARRAY_BUFFER, this.screenBuffer)
+  gl.vertexAttribPointer(this.timerProgram.attributes.screenCoord, 
+                         2, gl.FLOAT, gl.FALSE, 0, 0)
+
+  for (var i = 0; i < gpuEmitters.length; i++) {
+    emitter = gpuEmitters[i].gpuEmitter
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, emitter.propTargets[1].handle) 
+    gl.viewport(0, 0, emitter.propTargets[1].width, 
+                      emitter.propTargets[1].height)
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, emitter.propTargets[0].texture)
+    gl.uniform1i(this.timerProgram.uniforms.props, 0)
+    gl.uniform1f(this.timerProgram.uniforms.lifeTime, emitter.lifeTime)
+    gl.uniform2f(this.timerProgram.uniforms.viewport, 
+                 emitter.propTargets[1].width, 
+                 emitter.propTargets[1].height)
+    gl.drawArrays(gl.TRIANGLES, 0, 6)
+
+    tmpBuf                 = emitter.propTargets[0]
+    emitter.propTargets[0] = emitter.propTargets[1]
+    emitter.propTargets[1] = tmpBuf
+  }
+
+
+  //VELOCITY UPDATE
   gl.useProgram(this.velocityProgram.program)
   gl.enable(gl.BLEND)
   gl.blendFunc(gl.ONE, gl.ZERO)
@@ -68,6 +106,7 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
   gl.bindBuffer(gl.ARRAY_BUFFER, this.screenBuffer)
   gl.vertexAttribPointer(this.velocityProgram.attributes.screenCoord, 
                          2, gl.FLOAT, gl.FALSE, 0, 0)
+
   for (var i = 0; i < attractors.length; i++) {
     gl.uniform3f(vUniforms["attractors[" + i + "].position"],
                  attractors[i].physics.position[0],
@@ -96,14 +135,16 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
     gl.bindTexture(gl.TEXTURE_2D, emitter.velTargets[0].texture)
     gl.activeTexture(gl.TEXTURE0 + 1)
     gl.bindTexture(gl.TEXTURE_2D, emitter.posTargets[0].texture)
+    gl.activeTexture(gl.TEXTURE0 + 2)
+    gl.bindTexture(gl.TEXTURE_2D, emitter.propTargets[0].texture)
     gl.uniform1i(this.velocityProgram.uniforms.velocities, 0)
     gl.uniform1i(this.velocityProgram.uniforms.positions, 1)
+    gl.uniform1i(this.velocityProgram.uniforms.props, 2)
     gl.uniform2f(this.velocityProgram.uniforms.viewport, 
                  emitter.velTargets[1].width, 
                  emitter.velTargets[1].height)
     gl.uniformMatrix4fv(this.velocityProgram.uniforms.modelMatrix, 
                         false, this.modelMatrix)
-                 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
     tmpBuf                = emitter.velTargets[0]
@@ -111,6 +152,7 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
     emitter.velTargets[1] = tmpBuf
   }
 
+  //POSITION UPDATE
   gl.useProgram(this.positionProgram.program)
   gl.uniform1f(this.positionProgram.uniforms.dT, dTSeconds)
   gl.bindBuffer(gl.ARRAY_BUFFER, this.screenBuffer)
@@ -128,8 +170,11 @@ GPUParticleSystem.prototype.update = function (dT, gpuEmitters, attractors) {
     gl.bindTexture(gl.TEXTURE_2D, emitter.velTargets[0].texture)
     gl.activeTexture(gl.TEXTURE0 + 1)
     gl.bindTexture(gl.TEXTURE_2D, emitter.posTargets[0].texture)
+    gl.activeTexture(gl.TEXTURE0 + 2)
+    gl.bindTexture(gl.TEXTURE_2D, emitter.propTargets[0].texture)
     gl.uniform1i(this.positionProgram.uniforms.velocities, 0)
     gl.uniform1i(this.positionProgram.uniforms.positions, 1)
+    gl.uniform1i(this.positionProgram.uniforms.props, 2)
     gl.uniform2f(this.positionProgram.uniforms.viewport, 
                  emitter.posTargets[1].width, 
                  emitter.posTargets[1].height)
@@ -199,6 +244,6 @@ GPUParticleSystem.prototype.render = function (camera, lights, gpuEmitters) {
     gl.bindBuffer(gl.ARRAY_BUFFER, emitter.coordBuffer)
     gl.vertexAttribPointer(this.renderProgram.attributes.particleCoord, 
                            2, gl.FLOAT, gl.FALSE, 0, 0)
-    gl.drawArrays(gl.POINTS, 0, emitter.aliveCount)
+    gl.drawArrays(gl.POINTS, 0, emitter.count)
   }
 }

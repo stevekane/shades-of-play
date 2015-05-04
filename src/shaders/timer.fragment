@@ -1,0 +1,20 @@
+precision highp float;
+
+uniform float dT;
+uniform float lifeTime; 
+uniform vec2 viewport;
+uniform sampler2D props;
+
+void main () {
+  vec2 textureIndex  = gl_FragCoord.xy / viewport;
+  float oldTimeAlive = texture2D(props, textureIndex).x;
+  float timeAlive    = 0.0;
+
+  if (oldTimeAlive > lifeTime) { 
+    timeAlive = 0.0;
+  } else {
+    timeAlive = oldTimeAlive + dT;
+  }
+  
+  gl_FragColor = vec4(timeAlive, 0.0, 0.0, 0.0);  
+}

@@ -1,14 +1,20 @@
-precision mediump float;
+precision highp float;
 
 uniform float dT;
 uniform vec2 viewport;
 uniform sampler2D velocities;
 uniform sampler2D positions;
+uniform sampler2D props;
 
 void main () {
   vec2 textureIndex = gl_FragCoord.xy / viewport;
   vec3 velocity     = texture2D(velocities, textureIndex).xyz;
   vec3 position     = texture2D(positions, textureIndex).xyz;
+  float timeAlive   = texture2D(props, textureIndex).x;
 
-  gl_FragColor  = vec4((dT / 10.0 * velocity) + position, 1.0);
+  if (timeAlive == 0.0) {
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+  } else {
+    gl_FragColor  = vec4((dT / 10.0 * velocity) + position, 1.0);
+  }
 }

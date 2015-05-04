@@ -4,9 +4,9 @@ var resizeWithRatio = require("./dom-utils").resizeWithRatio
 module.exports = GLShell
 
 function GLShell (parentNode, aspectRatio) {
-  var canvas           = document.createElement("canvas")
-  var gl               = canvas.getContext("webgl")
-  var clock            = new Clock
+  var canvas = document.createElement("canvas")
+  var gl     = canvas.getContext("webgl")
+  var clock  = new Clock
 
   var render = function () {
     var ratio = this.gl.canvas.clientWidth / this.gl.canvas.clientHeight
