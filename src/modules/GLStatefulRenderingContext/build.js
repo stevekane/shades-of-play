@@ -1,0 +1,12 @@
+var browserify = require("browserify")
+var fs         = require("fs")
+var path       = require("path")
+var entryPath  = path.join(__dirname, "GLStatefulRenderingContext")
+var testPath   = path.join(__dirname, "tests")
+var outStream  = fs.createWriteStream(path.join(__dirname, "test-output.js"))
+
+browserify({debug: true})
+  .require(testPath, {entry: true})
+  .bundle()
+  .on("error", console.log.bind(console))
+  .pipe(outStream)
