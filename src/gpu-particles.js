@@ -31,6 +31,8 @@ var attractors  = entities.filter(function (e) { return !!e.attractive && !!e.ph
 var lights      = entities.filter(function (e) { return !!e.light && !!e.physics})
 var camera      = new Camera(shell.gl, 0, 0, 2.5, 0, 0, 0)
 
+window.gl = shell.gl
+
 shell.render = function () {
   gpuParticleSystem.render(camera, lights, gpuEmitters)
 }

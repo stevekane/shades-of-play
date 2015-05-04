@@ -33,7 +33,8 @@ function GPUParticleSystem (gl) {
   gl.bindBuffer(gl.ARRAY_BUFFER, screenBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, screenQuad, gl.STATIC_DRAW)
 
-  gl.clearColor(0, 0, 0, 0)
+  //gl.clearColor(0, 0, 0, 0)
+  gl.clearColor(1, 1, 1, 1)
 
   // Each shader has only a attribute bound thus allowing this to work. 
   // The better question is how can we formulate this such that a program

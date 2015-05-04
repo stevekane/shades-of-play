@@ -1,16 +1,16 @@
-var Clock           = require("./Clock")
+var Clock            = require("./Clock")
+var GLStatefulRenderingContext = require("./modules/GLStatefulRenderingContext/GLStatefulRenderingContext")
 var resizeWithRatio = require("./dom-utils").resizeWithRatio
 
 module.exports = GLShell
 
 function GLShell (parentNode, aspectRatio) {
   var canvas           = document.createElement("canvas")
-  var gl               = canvas.getContext("webgl")
+  var ctx              = canvas.getContext("webgl")
+  var gl               = new GLStatefulRenderingContext(ctx)
   var clock            = new Clock
 
   var render = function () {
-    var ratio = this.gl.canvas.clientWidth / this.gl.canvas.clientHeight
-
     resizeWithRatio(this.aspectRatio, this.parentNode, this.gl.canvas)
     this.render() 
     requestAnimationFrame(render)
@@ -21,12 +21,12 @@ function GLShell (parentNode, aspectRatio) {
     this.update(this.clock.dT) 
   }.bind(this)
 
-  parentNode.appendChild(canvas)
   this.parentNode  = parentNode
   this.gl          = gl
   this.aspectRatio = aspectRatio
   this.clock       = clock
 
+  parentNode.appendChild(canvas)
   requestAnimationFrame(render)
   setInterval(update, 25)
 }

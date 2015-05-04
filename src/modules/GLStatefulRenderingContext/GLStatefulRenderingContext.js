@@ -2,17 +2,15 @@
 
 module.exports = GLStatefulRenderingContext
 
-function proxy (outer, inner, fnName) {
-  var fn = function (a1, a2, a3, a4, a5, a6, a7) {
-    return inner[fnName](a1, a2, a3, a4, a5, a6, a7)
-  }
-
-  outer[fnName] = fn
+function proxyValue (outer, inner, propName) {
+  Object.defineProperty(outer, propName, {
+    get: function () { return inner[propName] } 
+  })
 }
 
-function proxyAll (outer, inner, fnNames) {
-  for (var i = 0; i < fnNames.length; i++) {
-    proxy(outer, inner, fnNames[i])
+function proxyFn (outer, inner, propName) {
+  outer[propName] = function (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) {
+    return inner[propName](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
   }
 }
 
@@ -27,17 +25,29 @@ function ProgramState () {
     vertex:   null,
     fragment: null
   }
-  this.linked     = false
-  this.uniforms   = {}
-  this.attributes = {}
+  this.linked                = false
+  this.validated             = false
+  this.activeUniformsCount   = 0
+  this.activeAttributesCount = 0
+  this.uniforms              = {}
+  this.attributes            = {}
+
+  Object.defineProperty(this, "attachedShaderCount", {
+    get: function () {
+      return (this.attachedShaders.vertex ? 1: 0) + 
+             (this.attachedShaders.fragment ? 1 : 0)
+    }
+  })
 }
 
 // TODO: implement when ready
 function RenderBufferState () {}
 
 function GLStatefulRenderingContext (ctx) {
-  this.shaders  = new WeakMap
-  this.programs = new WeakMap
+  this.shaders       = new WeakMap
+  this.programs      = new WeakMap
+  this.activeProgram = null
+  this.ctx           = ctx
 
   // PROGRAMS
   this.createProgram = function () {
@@ -58,13 +68,12 @@ function GLStatefulRenderingContext (ctx) {
     var uName
     var aName
 
-    //TODO: Should cases like this throw an error?
-    if (!pState) return
-
     ctx.linkProgram(program)
 
-    numAttributes = ctx.getProgramParameter(program, ctx.ACTIVE_ATTRIBUTES)
-    numUniforms   = ctx.getProgramParameter(program, ctx.ACTIVE_UNIFORMS)
+    numAttributes                = ctx.getProgramParameter(program, ctx.ACTIVE_ATTRIBUTES)
+    numUniforms                  = ctx.getProgramParameter(program, ctx.ACTIVE_UNIFORMS)
+    pState.activeAttributesCount = numAttributes
+    pState.activeUniformsCount   = numUniforms
 
     for (var i = 0; i < numAttributes; ++i) {
       aName                    = ctx.getActiveAttrib(program, i).name
@@ -76,7 +85,23 @@ function GLStatefulRenderingContext (ctx) {
       pState.uniforms[uName] = ctx.getUniformLocation(program, uName)
     }
 
-    pState.linked = true
+    pState.linked = ctx.getProgramParameter(program, ctx.LINK_STATUS)
+  }
+
+  this.validateProgram = function (program) {
+    var pState = this.programs.get(program) 
+
+    if (!pState.validated) {
+      ctx.validateProgram(program)  
+      pState.validated = ctx.getProgramParameter(program, ctx.VALIDATE_STATUS)
+    }
+  }
+
+  this.useProgram = function (program) {
+    if (this.activeProgram !== program) {
+      ctx.useProgram(program)
+      this.activeProgram = program
+    }
   }
 
   this.attachShader = function (program, shader) {
@@ -94,10 +119,18 @@ function GLStatefulRenderingContext (ctx) {
       pState.attachedShaders.fragment = shader
     }
   }
+
+  this.detachShader = function (program, shader) {
+    var pState     = this.programs.get(program)
+    var sState     = this.shaders.get(shader)
+    var shaderType = sState.type === ctx.VERTEX_SHADER ? vertex : fragment
+
+    if (pState.attachedShaders[shaderType] === shader) {
+      ctx.detachShader(program, shader)
+      pState.attachedShaders[shaderType] = null
+    }
+  }
   
-  proxyAll(this, ctx, [
-    "bindAttribLocation",
-  ])
   // PROGRAMS -- END
   
   // SHADERS
@@ -130,10 +163,12 @@ function GLStatefulRenderingContext (ctx) {
     }
   }
 
-  proxyAll(this, ctx, [
-    "getShaderSource"
-  ])
+  //proxy anything NOT defined above through to the underlying context.
+  for (var prop in ctx) {
+    if (!this[prop]) {
+      if (ctx[prop] instanceof Function) proxyFn(this, ctx, prop) 
+      else                               proxyValue(this, ctx, prop)
+    }
+  }
   // SHADERS -- END
-
-  this.ctx = ctx
 }
